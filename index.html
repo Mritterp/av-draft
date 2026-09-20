@@ -1,0 +1,741 @@
+<title>AV Draft</title>
+<meta name="description" content="A two-column audio/video script editor for commercials, with local drafts, recent files, and print/export.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Courier+Prime:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F3E9;
+    --panel:#EEE6D3;
+    --panel-2:#E6DCC3;
+    --ink:#221C13;
+    --ink-soft:#6C6250;
+    --line:#D8CBA8;
+    --accent:#B8481F;
+    --accent-ink:#FBEFE7;
+    --danger:#9A3B2E;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#161209;
+      --panel:#1E1810;
+      --panel-2:#241D13;
+      --ink:#EFE6D3;
+      --ink-soft:#A79876;
+      --line:#3A2F1C;
+      --accent:#E0834F;
+      --accent-ink:#241205;
+      --danger:#E0765F;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#161209;
+    --panel:#1E1810;
+    --panel-2:#241D13;
+    --ink:#EFE6D3;
+    --ink-soft:#A79876;
+    --line:#3A2F1C;
+    --accent:#E0834F;
+    --accent-ink:#241205;
+    --danger:#E0765F;
+    color-scheme: dark;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, sans-serif;
+    padding-inline:16px;
+    padding-block:20px;
+  }
+  .wrap{ max-width:980px; margin:0 auto; }
+
+  /* ---- toolbar ---- */
+  .toolbar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:16px;
+    position:relative;
+  }
+  .brand{
+    font-family:"Fraunces", serif;
+    font-weight:600;
+    font-size:1.05rem;
+    letter-spacing:.01em;
+    margin-right:8px;
+    white-space:nowrap;
+  }
+  .brand span{ color:var(--accent); }
+  .btn{
+    font-family:inherit; font-size:.85rem; font-weight:500;
+    color:var(--ink); background:var(--paper);
+    border:1px solid var(--line); border-radius:7px;
+    padding:7px 12px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px;
+    line-height:1.1;
+  }
+  .btn:hover{ border-color:var(--accent); }
+  .btn:focus-visible, .icon-btn:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible{
+    outline:2px solid var(--accent); outline-offset:1px;
+  }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .btn.primary:hover{ filter:brightness(1.06); }
+  .status{
+    margin-left:auto; font-size:.78rem; color:var(--ink-soft);
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .dot{ width:6px; height:6px; border-radius:50%; background:var(--line); }
+  .dot.dirty{ background:var(--accent); }
+
+  .dropdown{ position:relative; }
+  .menu{
+    position:absolute; top:calc(100% + 6px); left:0; z-index:20;
+    background:var(--paper); border:1px solid var(--line); border-radius:9px;
+    min-width:240px; box-shadow:0 8px 24px rgba(0,0,0,.18);
+    padding:6px; display:none;
+  }
+  .menu.open{ display:block; }
+  .menu-label{
+    font-size:.7rem; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-soft); padding:6px 8px 2px;
+  }
+  .menu-item{
+    display:block; width:100%; text-align:left; background:none; border:none;
+    font-family:inherit; font-size:.85rem; color:var(--ink);
+    padding:7px 8px; border-radius:6px; cursor:pointer;
+  }
+  .menu-item:hover{ background:var(--panel-2); }
+  .menu-item .sub{ display:block; font-size:.72rem; color:var(--ink-soft); }
+  .menu-empty{ padding:8px; font-size:.8rem; color:var(--ink-soft); }
+  .menu-divider{ height:1px; background:var(--line); margin:6px 2px; }
+
+  /* ---- confirm banner ---- */
+  .confirm-bar{
+    display:none; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--panel-2); border:1px solid var(--accent); border-radius:9px;
+    padding:10px 12px; margin-bottom:14px; font-size:.85rem;
+  }
+  .confirm-bar.open{ display:flex; }
+
+  /* ---- slate header ---- */
+  .slate{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:18px 18px 14px; margin-bottom:18px;
+  }
+  .slate-title{
+    width:100%; border:none; background:none; color:var(--ink);
+    font-family:"Fraunces", serif; font-weight:700; font-size:1.6rem;
+    padding:2px 0; margin-bottom:12px;
+  }
+  .slate-title::placeholder{ color:var(--ink-soft); opacity:.6; }
+  .slate-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px 16px;
+  }
+  .field label{
+    display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--ink-soft); margin-bottom:3px;
+  }
+  .field input, .field select{
+    width:100%; font-family:"Courier Prime", monospace; font-size:.88rem;
+    background:var(--paper); color:var(--ink); border:1px solid var(--line);
+    border-radius:6px; padding:6px 8px;
+  }
+  .field .readout{
+    width:100%; font-family:"Courier Prime", monospace; font-size:.88rem;
+    background:var(--panel-2); color:var(--ink); border:1px solid var(--line);
+    border-radius:6px; padding:6px 8px; font-variant-numeric:tabular-nums;
+  }
+
+  /* ---- table ---- */
+  .cols, .row{ grid-template-columns:60px 60px 1fr 1fr 84px; }
+  .cols{
+    display:grid; gap:10px;
+    padding:0 4px 6px; font-size:.7rem; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--ink-soft);
+  }
+  .rows{ display:flex; flex-direction:column; gap:8px; }
+  .row{
+    display:grid; gap:10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:9px;
+    padding:8px;
+  }
+  .row textarea, .row input.tcell{
+    width:100%; font-family:"Courier Prime", monospace; font-size:.9rem;
+    line-height:1.35; color:var(--ink); background:var(--paper);
+    border:1px solid var(--line); border-radius:6px; padding:7px 8px;
+    resize:none; overflow:hidden; min-height:44px;
+  }
+  .row input.tcell{ min-height:auto; text-align:center; font-variant-numeric:tabular-nums; }
+  .row input.tcell.len{ color:var(--ink-soft); }
+  .row .actions{ display:flex; flex-direction:column; gap:4px; align-items:stretch; }
+  .icon-btn{
+    font-family:inherit; font-size:.75rem; background:var(--paper);
+    border:1px solid var(--line); border-radius:5px; color:var(--ink-soft);
+    cursor:pointer; padding:3px 0;
+  }
+  .icon-btn:hover{ color:var(--danger); border-color:var(--danger); }
+  .icon-btn.move:hover{ color:var(--accent); border-color:var(--accent); }
+
+  .add-row{
+    margin-top:12px; width:100%; padding:10px; border:1px dashed var(--line);
+    border-radius:9px; background:none; color:var(--ink-soft);
+    font-family:inherit; font-size:.85rem; cursor:pointer;
+  }
+  .add-row:hover{ border-color:var(--accent); color:var(--accent); }
+
+  /* ---- export panel ---- */
+  .export-panel{
+    display:none; margin-top:16px; background:var(--panel); border:1px solid var(--line);
+    border-radius:10px; padding:14px;
+  }
+  .export-panel.open{ display:block; }
+  .export-panel h3{ margin:0 0 6px; font-family:"Fraunces", serif; font-size:1rem; }
+  .export-panel p{ margin:0 0 10px; font-size:.8rem; color:var(--ink-soft); }
+  .export-panel textarea{
+    width:100%; height:220px; font-family:"Courier Prime", monospace; font-size:.82rem;
+    background:var(--paper); color:var(--ink); border:1px solid var(--line);
+    border-radius:7px; padding:10px; resize:vertical;
+  }
+  .export-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+  footer.hint{ margin-top:18px; font-size:.75rem; color:var(--ink-soft); line-height:1.5; }
+
+  @media (max-width:640px){
+    .slate-grid{ grid-template-columns:repeat(2,1fr); }
+    .cols, .row{ grid-template-columns:44px 44px 1fr 1fr 60px; }
+    .row .actions{ flex-direction:row; flex-wrap:wrap; }
+  }
+
+  @media print{
+    body{ background:#fff; color:#000; padding:0; }
+    .toolbar, .confirm-bar, .add-row, .export-panel, footer.hint, .actions{ display:none !important; }
+    .slate, .row, .cols{ background:#fff; border-color:#999; }
+    .slate-title{ color:#000; }
+    .row{ break-inside:avoid; }
+    input, textarea, select{ color:#000 !important; }
+  }
+</style>
+
+<div class="wrap">
+  <div class="toolbar">
+    <div class="brand">AV Draft</div>
+    <button class="btn" id="btnNew">New</button>
+
+    <div class="dropdown">
+      <button class="btn" id="btnOpen">Open ▾</button>
+      <div class="menu" id="menuOpen"></div>
+    </div>
+
+    <button class="btn primary" id="btnSave">Save</button>
+
+    <div class="dropdown">
+      <button class="btn" id="btnExport">Export ▾</button>
+      <div class="menu" id="menuExport">
+        <div class="menu-label">Print</div>
+        <button class="menu-item" data-export="print">Print / Save as PDF</button>
+        <div class="menu-divider"></div>
+        <div class="menu-label">Copy</div>
+        <button class="menu-item" data-export="text">Plain text<span class="sub">for email or a script doc</span></button>
+        <button class="menu-item" data-export="markdown">Markdown table<span class="sub">for docs / wikis</span></button>
+        <button class="menu-item" data-export="json">JSON<span class="sub">to re-open here later</span></button>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json,.txt,.md" hidden>
+
+    <div class="status">
+      <span class="dot" id="dirtyDot"></span>
+      <span id="statusText">Not saved yet</span>
+    </div>
+  </div>
+
+  <div class="confirm-bar" id="confirmBar">
+    <span id="confirmMsg">Discard unsaved changes?</span>
+    <button class="btn primary" id="confirmYes">Discard</button>
+    <button class="btn" id="confirmNo">Cancel</button>
+  </div>
+
+  <div class="slate">
+    <input class="slate-title" id="fTitle" placeholder="Untitled script" aria-label="Script title">
+    <div class="slate-grid">
+      <div class="field"><label for="fClient">Client</label><input id="fClient" placeholder="e.g. Heritage Ins."></div>
+      <div class="field"><label for="fProduct">Product / campaign</label><input id="fProduct" placeholder="e.g. Spring brand spot"></div>
+      <div class="field"><label for="fWriter">Writer</label><input id="fWriter" placeholder="e.g. J. Alvarez"></div>
+      <div class="field"><label>Total length</label><div class="readout" id="totalReadout">:00</div></div>
+    </div>
+  </div>
+
+  <div class="cols"><div>TC In</div><div>Len</div><div>Video</div><div>Audio</div><div></div></div>
+  <div class="rows" id="rows"></div>
+  <button class="add-row" id="addRow">+ Add row</button>
+
+  <div class="export-panel" id="exportPanel">
+    <h3 id="exportTitle">Export</h3>
+    <p id="exportHint">Downloads aren't available inside this preview, so copy the text below and save it as a file yourself — or use Print for a PDF.</p>
+    <textarea id="exportText" readonly></textarea>
+    <div class="export-actions">
+      <button class="btn primary" id="copyExport">Copy to clipboard</button>
+      <button class="btn" id="closeExport">Close</button>
+    </div>
+  </div>
+
+  <footer class="hint">
+    TC In updates automatically from each row's Length — edit a row's Length and every row after it shifts to match, or edit a row's TC In directly and the row above it stretches or shrinks to meet it. Drafts save to this browser only (via <code>localStorage</code>) — they won't appear on another device or in another browser, and clearing site data will remove them. Use Export → JSON and save the copied text as a file for a portable backup you can re-open with "Open → Browse a file."
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var IDX_KEY = "avscript.index";
+  var DOC_KEY = "avscript.doc.";
+
+  function uid(){ return "d" + Date.now() + Math.floor(Math.random()*1000); }
+  function todayStr(){ var d=new Date(); return d.toISOString().slice(0,10); }
+
+  // ---------- time helpers ----------
+  function parseSeconds(str){
+    str = (str==null ? "" : String(str)).trim().replace(/s$/i,"");
+    if(str === "") return 0;
+    var parts = str.split(":");
+    var secs = 0;
+    for(var i=0;i<parts.length;i++){
+      var p = parseFloat(parts[i]);
+      if(isNaN(p)) p = 0;
+      secs = secs*60 + p;
+    }
+    return secs < 0 ? 0 : secs;
+  }
+  function formatTC(totalSeconds){
+    totalSeconds = Math.round((totalSeconds||0)*10)/10;
+    if(totalSeconds < 0) totalSeconds = 0;
+    var mins = Math.floor(totalSeconds/60);
+    var secs = totalSeconds - mins*60;
+    var secsStr = (secs % 1 === 0) ? String(Math.round(secs)) : secs.toFixed(1);
+    if(secsStr.indexOf(".") === -1) secsStr = secsStr.length < 2 ? "0"+secsStr : secsStr;
+    return mins > 0 ? (mins + ":" + secsStr) : (":" + secsStr);
+  }
+  function formatLen(totalSeconds){
+    totalSeconds = Math.round((totalSeconds||0)*10)/10;
+    if(totalSeconds < 0) totalSeconds = 0;
+    var s = (totalSeconds % 1 === 0) ? String(Math.round(totalSeconds)) : totalSeconds.toFixed(1);
+    return s + "s";
+  }
+
+  function blankDoc(){
+    return {
+      id: null,
+      title: "",
+      client: "", product: "", writer: "", date: todayStr(),
+      rows: [
+        {tcIn:0,  len:5, video:"", audio:""},
+        {tcIn:5,  len:5, video:"", audio:""},
+        {tcIn:10, len:5, video:"", audio:""}
+      ]
+    };
+  }
+
+  var doc = blankDoc();
+  var dirty = false;
+
+  function safeLS(){
+    try{ window.localStorage.setItem("__t","1"); window.localStorage.removeItem("__t"); return window.localStorage; }
+    catch(e){ return null; }
+  }
+  var LS = safeLS();
+
+  function loadIndex(){
+    if(!LS) return [];
+    try{ return JSON.parse(LS.getItem(IDX_KEY) || "[]"); }catch(e){ return []; }
+  }
+  function saveIndex(list){ if(LS){ try{ LS.setItem(IDX_KEY, JSON.stringify(list)); }catch(e){} } }
+
+  function markDirty(v){
+    dirty = v;
+    var dot = document.getElementById("dirtyDot");
+    dot.classList.toggle("dirty", dirty);
+    document.getElementById("statusText").textContent = dirty ? "Unsaved changes" : (doc.id ? "Saved" : "Not saved yet");
+  }
+
+  // ---------- header fields ----------
+  var fTitle = document.getElementById("fTitle");
+  var fClient = document.getElementById("fClient");
+  var fProduct = document.getElementById("fProduct");
+  var fWriter = document.getElementById("fWriter");
+
+  function bindHeader(){
+    fTitle.addEventListener("input", function(){ doc.title = fTitle.value; markDirty(true); });
+    fClient.addEventListener("input", function(){ doc.client = fClient.value; markDirty(true); });
+    fProduct.addEventListener("input", function(){ doc.product = fProduct.value; markDirty(true); });
+    fWriter.addEventListener("input", function(){ doc.writer = fWriter.value; markDirty(true); });
+  }
+
+  function renderHeader(){
+    fTitle.value = doc.title || "";
+    fClient.value = doc.client || "";
+    fProduct.value = doc.product || "";
+    fWriter.value = doc.writer || "";
+  }
+
+  function updateTotal(){
+    var n = doc.rows.length;
+    var total = n ? (doc.rows[n-1].tcIn + doc.rows[n-1].len) : 0;
+    document.getElementById("totalReadout").textContent = formatTC(total);
+  }
+
+  // ---------- chain math ----------
+  // Recomputes TC In for every row after i0, chaining from rows[i0].tcIn + its Length.
+  function recalcFrom(i0){
+    for(var i=i0+1; i<doc.rows.length; i++){
+      doc.rows[i].tcIn = doc.rows[i-1].tcIn + doc.rows[i-1].len;
+    }
+  }
+
+  // ---------- rows ----------
+  var rowsEl = document.getElementById("rows");
+
+  function autoGrow(ta){ ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+
+  function renderRows(){
+    rowsEl.innerHTML = "";
+    doc.rows.forEach(function(r, i){
+      var row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML =
+        '<input class="tcell tc" data-idx="'+i+'" data-field="tc" aria-label="TC in, row '+(i+1)+'" placeholder=":00">' +
+        '<input class="tcell len" data-idx="'+i+'" data-field="len" aria-label="Length, row '+(i+1)+'" placeholder="5s">' +
+        '<textarea data-idx="'+i+'" data-field="video" rows="1" aria-label="Video, row '+(i+1)+'" placeholder="Video / action..."></textarea>' +
+        '<textarea data-idx="'+i+'" data-field="audio" rows="1" aria-label="Audio, row '+(i+1)+'" placeholder="VO / dialogue / SFX / music..."></textarea>' +
+        '<div class="actions">' +
+          '<button class="icon-btn move" data-action="up" data-idx="'+i+'" title="Move up">&#9650;</button>' +
+          '<button class="icon-btn move" data-action="down" data-idx="'+i+'" title="Move down">&#9660;</button>' +
+          '<button class="icon-btn" data-action="del" data-idx="'+i+'" title="Delete row">&#10005;</button>' +
+        '</div>';
+      rowsEl.appendChild(row);
+      row.querySelector('[data-field="tc"]').value = formatTC(r.tcIn);
+      row.querySelector('[data-field="len"]').value = formatLen(r.len);
+      var vt = row.querySelector('[data-field="video"]'); vt.value = r.video || "";
+      var at = row.querySelector('[data-field="audio"]'); at.value = r.audio || "";
+      requestAnimationFrame(function(){ autoGrow(vt); autoGrow(at); });
+    });
+    updateTotal();
+  }
+
+  // Lightweight refresh of just the TC In / Length inputs (doesn't touch textareas, so typing focus is safe).
+  function refreshTimes(){
+    var els = rowsEl.children;
+    for(var i=0; i<doc.rows.length; i++){
+      var el = els[i];
+      if(!el) continue;
+      var tcEl = el.querySelector('[data-field="tc"]');
+      var lenEl = el.querySelector('[data-field="len"]');
+      if(tcEl) tcEl.value = formatTC(doc.rows[i].tcIn);
+      if(lenEl) lenEl.value = formatLen(doc.rows[i].len);
+    }
+    updateTotal();
+  }
+
+  // live typing: video/audio only
+  rowsEl.addEventListener("input", function(e){
+    var t = e.target;
+    var field = t.getAttribute("data-field");
+    if(field !== "video" && field !== "audio") return;
+    var idx = +t.getAttribute("data-idx");
+    doc.rows[idx][field] = t.value;
+    autoGrow(t);
+    markDirty(true);
+  });
+
+  // committed edits: TC In / Length, resolved on blur or Enter
+  rowsEl.addEventListener("change", function(e){
+    var t = e.target;
+    var field = t.getAttribute("data-field");
+    if(field !== "tc" && field !== "len") return;
+    var idx = +t.getAttribute("data-idx");
+    var seconds = parseSeconds(t.value);
+
+    if(field === "len"){
+      doc.rows[idx].len = seconds;
+      recalcFrom(idx);
+    } else { // field === "tc"
+      if(idx === 0){
+        doc.rows[0].tcIn = seconds;
+      } else {
+        var prev = doc.rows[idx-1];
+        var newLen = seconds - prev.tcIn;
+        if(newLen < 0) newLen = 0;
+        prev.len = newLen;
+        doc.rows[idx].tcIn = prev.tcIn + newLen;
+      }
+      recalcFrom(idx);
+    }
+    refreshTimes();
+    markDirty(true);
+  });
+
+  rowsEl.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && (e.target.getAttribute("data-field") === "tc" || e.target.getAttribute("data-field") === "len")){
+      e.preventDefault();
+      e.target.blur();
+    }
+  });
+
+  rowsEl.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-action]");
+    if(!btn) return;
+    var idx = +btn.getAttribute("data-idx");
+    var action = btn.getAttribute("data-action");
+    if(action === "del"){
+      doc.rows.splice(idx,1);
+      if(doc.rows.length === 0) doc.rows.push({tcIn:0, len:5, video:"", audio:""});
+    } else if(action === "up" && idx > 0){
+      var tmp = doc.rows[idx-1]; doc.rows[idx-1] = doc.rows[idx]; doc.rows[idx] = tmp;
+    } else if(action === "down" && idx < doc.rows.length - 1){
+      var tmp2 = doc.rows[idx+1]; doc.rows[idx+1] = doc.rows[idx]; doc.rows[idx] = tmp2;
+    }
+    recalcFrom(0);
+    renderRows();
+    markDirty(true);
+  });
+
+  document.getElementById("addRow").addEventListener("click", function(){
+    var last = doc.rows[doc.rows.length-1];
+    var startTc = last ? last.tcIn + last.len : 0;
+    doc.rows.push({tcIn:startTc, len:5, video:"", audio:""});
+    renderRows();
+    markDirty(true);
+  });
+
+  // ---------- new / open / save ----------
+  var pendingAction = null;
+
+  function showConfirm(msg, onYes){
+    document.getElementById("confirmMsg").textContent = msg;
+    document.getElementById("confirmBar").classList.add("open");
+    pendingAction = onYes;
+  }
+  document.getElementById("confirmYes").addEventListener("click", function(){
+    document.getElementById("confirmBar").classList.remove("open");
+    if(pendingAction) pendingAction();
+    pendingAction = null;
+  });
+  document.getElementById("confirmNo").addEventListener("click", function(){
+    document.getElementById("confirmBar").classList.remove("open");
+    pendingAction = null;
+  });
+
+  function guard(action){
+    if(dirty){ showConfirm("Discard unsaved changes?", action); }
+    else { action(); }
+  }
+
+  function loadDoc(newDoc){
+    doc = newDoc;
+    doc.rows.forEach(function(r){
+      r.tcIn = typeof r.tcIn === "number" ? r.tcIn : parseSeconds(r.tcIn || r.tc);
+      r.len = typeof r.len === "number" ? r.len : 5;
+    });
+    recalcFrom(0);
+    renderHeader();
+    renderRows();
+    markDirty(false);
+    document.getElementById("statusText").textContent = doc.id ? "Saved" : "Not saved yet";
+  }
+
+  document.getElementById("btnNew").addEventListener("click", function(){
+    guard(function(){ loadDoc(blankDoc()); });
+  });
+
+  document.getElementById("btnSave").addEventListener("click", function(){
+    if(!doc.id) doc.id = uid();
+    if(!LS){
+      document.getElementById("statusText").textContent = "Can't save — storage unavailable";
+      return;
+    }
+    try{
+      LS.setItem(DOC_KEY + doc.id, JSON.stringify(doc));
+      var list = loadIndex().filter(function(e){ return e.id !== doc.id; });
+      list.unshift({ id: doc.id, title: doc.title || "Untitled script", updatedAt: Date.now() });
+      saveIndex(list.slice(0,20));
+      markDirty(false);
+      document.getElementById("statusText").textContent = "Saved just now";
+      renderOpenMenu();
+    }catch(e){
+      document.getElementById("statusText").textContent = "Save failed (storage full or blocked)";
+    }
+  });
+
+  // ---------- open menu ----------
+  var menuOpen = document.getElementById("menuOpen");
+  function fmtTime(ts){
+    var d = new Date(ts);
+    return d.toLocaleDateString(undefined,{month:"short", day:"numeric"}) + " " +
+           d.toLocaleTimeString(undefined,{hour:"numeric", minute:"2-digit"});
+  }
+  function renderOpenMenu(){
+    var list = loadIndex();
+    var html = '<div class="menu-label">Recent</div>';
+    if(list.length === 0){
+      html += '<div class="menu-empty">No saved scripts yet</div>';
+    } else {
+      list.forEach(function(e){
+        html += '<button class="menu-item" data-open="'+e.id+'">'+ (escapeHtml(e.title||"Untitled script")) +
+                '<span class="sub">'+ fmtTime(e.updatedAt) +'</span></button>';
+      });
+    }
+    html += '<div class="menu-divider"></div><button class="menu-item" id="browseFile">Browse a file&hellip;<span class="sub">open a previously exported .json</span></button>';
+    menuOpen.innerHTML = html;
+  }
+  function escapeHtml(s){ return s.replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+  menuOpen.addEventListener("click", function(e){
+    var openBtn = e.target.closest("[data-open]");
+    if(openBtn){
+      var id = openBtn.getAttribute("data-open");
+      guard(function(){
+        try{
+          var raw = LS.getItem(DOC_KEY + id);
+          if(raw) loadDoc(JSON.parse(raw));
+        }catch(err){}
+      });
+      closeMenus();
+      return;
+    }
+    if(e.target.id === "browseFile"){
+      document.getElementById("fileInput").click();
+      closeMenus();
+    }
+  });
+
+  document.getElementById("fileInput").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var parsed = JSON.parse(reader.result);
+        if(parsed && Array.isArray(parsed.rows)){
+          parsed.id = null;
+          guard(function(){ loadDoc(parsed); });
+        } else {
+          alert("That file doesn't look like a Slate & Script JSON export.");
+        }
+      }catch(err){
+        alert("Couldn't read that file as JSON. Use a file exported from Export → JSON.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  // ---------- dropdown toggling ----------
+  function closeMenus(){
+    document.getElementById("menuOpen").classList.remove("open");
+    document.getElementById("menuExport").classList.remove("open");
+  }
+  document.getElementById("btnOpen").addEventListener("click", function(e){
+    e.stopPropagation();
+    renderOpenMenu();
+    var m = document.getElementById("menuOpen");
+    var wasOpen = m.classList.contains("open");
+    closeMenus();
+    if(!wasOpen) m.classList.add("open");
+  });
+  document.getElementById("btnExport").addEventListener("click", function(e){
+    e.stopPropagation();
+    var m = document.getElementById("menuExport");
+    var wasOpen = m.classList.contains("open");
+    closeMenus();
+    if(!wasOpen) m.classList.add("open");
+  });
+  document.addEventListener("click", closeMenus);
+
+  // ---------- export ----------
+  function totalLenSeconds(){
+    var n = doc.rows.length;
+    return n ? (doc.rows[n-1].tcIn + doc.rows[n-1].len) : 0;
+  }
+  function buildText(){
+    var lines = [];
+    lines.push((doc.title || "Untitled script").toUpperCase());
+    var meta = [];
+    if(doc.client) meta.push("Client: " + doc.client);
+    if(doc.product) meta.push("Product: " + doc.product);
+    meta.push("Length: " + formatTC(totalLenSeconds()));
+    if(doc.writer) meta.push("Writer: " + doc.writer);
+    lines.push(meta.join("   |   "));
+    lines.push("");
+    doc.rows.forEach(function(r){
+      var tcLabel = formatTC(r.tcIn) + " +" + formatLen(r.len);
+      lines.push(tcLabel + "   VIDEO: " + (r.video||""));
+      lines.push(" ".repeat(Math.max(tcLabel.length-6,0)) + "      AUDIO: " + (r.audio||""));
+      lines.push("");
+    });
+    return lines.join("\n");
+  }
+  function buildMarkdown(){
+    var lines = [];
+    lines.push("# " + (doc.title || "Untitled script"));
+    var meta = [];
+    if(doc.client) meta.push("**Client:** " + doc.client);
+    if(doc.product) meta.push("**Product:** " + doc.product);
+    meta.push("**Length:** " + formatTC(totalLenSeconds()));
+    if(doc.writer) meta.push("**Writer:** " + doc.writer);
+    lines.push(meta.join("  \n"));
+    lines.push("");
+    lines.push("| TC In | Len | Video | Audio |");
+    lines.push("|---|---|---|---|");
+    doc.rows.forEach(function(r){
+      var esc = function(s){ return (s||"").replace(/\|/g,"\\|").replace(/\n/g," "); };
+      lines.push("| " + formatTC(r.tcIn) + " | " + formatLen(r.len) + " | " + esc(r.video) + " | " + esc(r.audio) + " |");
+    });
+    return lines.join("\n");
+  }
+  function buildJSON(){ return JSON.stringify(doc, null, 2); }
+
+  var exportPanel = document.getElementById("exportPanel");
+  var exportText = document.getElementById("exportText");
+  var exportTitle = document.getElementById("exportTitle");
+
+  document.getElementById("menuExport").addEventListener("click", function(e){
+    var item = e.target.closest("[data-export]");
+    if(!item) return;
+    var kind = item.getAttribute("data-export");
+    closeMenus();
+    if(kind === "print"){ window.print(); return; }
+    var text = kind === "text" ? buildText() : kind === "markdown" ? buildMarkdown() : buildJSON();
+    exportTitle.textContent = "Export — " + (kind === "text" ? "Plain text" : kind === "markdown" ? "Markdown" : "JSON");
+    exportText.value = text;
+    exportPanel.classList.add("open");
+    exportText.focus();
+    exportText.select();
+  });
+  document.getElementById("closeExport").addEventListener("click", function(){
+    exportPanel.classList.remove("open");
+  });
+  document.getElementById("copyExport").addEventListener("click", function(){
+    var btn = document.getElementById("copyExport");
+    exportText.focus(); exportText.select();
+    function done(ok){ btn.textContent = ok ? "Copied ✓" : "Select all + Ctrl/Cmd-C"; setTimeout(function(){ btn.textContent = "Copy to clipboard"; }, 1800); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(exportText.value).then(function(){ done(true); }).catch(function(){ done(false); });
+    } else {
+      try{ done(document.execCommand("copy")); }catch(e){ done(false); }
+    }
+  });
+
+  // ---------- init ----------
+  bindHeader();
+  renderHeader();
+  recalcFrom(0);
+  renderRows();
+  renderOpenMenu();
+  markDirty(false);
+})();
+</script>
