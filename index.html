@@ -1,5 +1,10 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AV Draft</title>
-<meta name="description" content="A two-column audio/video script editor for commercials, with local drafts, recent files, and print/export.">
+<meta name="description" content="An audio/video script editor for commercials, with local drafts, recent files, and print/export.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Courier+Prime:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -51,7 +56,7 @@
     padding-inline:16px;
     padding-block:20px;
   }
-  .wrap{ max-width:980px; margin:0 auto; }
+  .wrap{ max-width:1180px; margin:0 auto; }
 
   /* ---- toolbar ---- */
   .toolbar{
@@ -135,7 +140,7 @@
   }
   .slate-title::placeholder{ color:var(--ink-soft); opacity:.6; }
   .slate-grid{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:10px 16px;
+    display:grid; grid-template-columns:repeat(5,1fr); gap:10px 16px;
   }
   .field label{
     display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em;
@@ -153,11 +158,25 @@
   }
 
   /* ---- table ---- */
-  .cols, .row{ grid-template-columns:60px 60px 1fr 1fr 84px; }
+  .cols, .row{ grid-template-columns:60px 60px 1fr 1fr 1fr 84px; }
   .cols{
-    display:grid; gap:10px;
+    display:grid; gap:10px; align-items:end;
     padding:0 4px 6px; font-size:.7rem; text-transform:uppercase;
     letter-spacing:.08em; color:var(--ink-soft);
+  }
+  .cols input.col-label{
+    width:100%; font:inherit; letter-spacing:inherit; text-transform:uppercase;
+    color:var(--ink); background:var(--paper); border:1px solid var(--line);
+    padding:4px 7px; border-radius:6px; cursor:text;
+  }
+  .cols input.col-label:hover{ border-color:var(--accent); }
+  /* Each cell stretches to the row's height, and its textarea fills the cell, so the
+     boxes in a row always line up with the tallest one. */
+  .cell{ min-width:0; display:flex; flex-direction:column; }
+  .cell textarea{ flex:1 1 auto; }
+  .cell-label{
+    display:none; font-size:.66rem; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--ink-soft); margin:0 0 3px 2px;
   }
   .rows{ display:flex; flex-direction:column; gap:8px; }
   .row{
@@ -206,21 +225,58 @@
 
   footer.hint{ margin-top:18px; font-size:.75rem; color:var(--ink-soft); line-height:1.5; }
 
+  /* ---- undo toast ---- */
+  .toast{
+    position:fixed; left:50%; bottom:20px; transform:translateX(-50%); z-index:30;
+    display:none; align-items:center; gap:12px;
+    background:var(--ink); color:var(--paper); border-radius:9px;
+    padding:9px 10px 9px 14px; font-size:.85rem; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    max-width:calc(100% - 32px);
+  }
+  .toast.open{ display:flex; }
+  .toast button{
+    font:inherit; font-weight:600; color:var(--accent); background:none;
+    border:1px solid currentColor; border-radius:6px; padding:4px 10px; cursor:pointer;
+  }
+
+  @media (max-width:900px){
+    .slate-grid{ grid-template-columns:repeat(3,1fr); }
+  }
   @media (max-width:640px){
     .slate-grid{ grid-template-columns:repeat(2,1fr); }
-    .cols, .row{ grid-template-columns:44px 44px 1fr 1fr 60px; }
-    .row .actions{ flex-direction:row; flex-wrap:wrap; }
+    .cols{ display:flex; align-items:baseline; gap:8px; padding:0 2px 8px; }
+    .cols > div{ display:none; }
+    .cols > div:nth-child(5){ display:block; flex:1; }
+    .cols::before{ content:"Third column:"; white-space:nowrap; }
+    .row{
+      grid-template-columns:72px 72px 1fr;
+      grid-template-areas:"tc len actions" "video video video" "audio audio audio" "notes notes notes";
+    }
+    .row > .tc{ grid-area:tc; }
+    .row > .len{ grid-area:len; }
+    .row > .cell-video{ grid-area:video; }
+    .row > .cell-audio{ grid-area:audio; }
+    .row > .cell-notes{ grid-area:notes; }
+    .row > .actions{ grid-area:actions; flex-direction:row; justify-content:flex-end; }
+    .row .actions .icon-btn{ width:36px; }
+    .cell-label{ display:block; }
   }
 
   @media print{
     body{ background:#fff; color:#000; padding:0; }
-    .toolbar, .confirm-bar, .add-row, .export-panel, footer.hint, .actions{ display:none !important; }
+    .toolbar, .confirm-bar, .add-row, .export-panel, footer.hint, .actions, .toast{ display:none !important; }
     .slate, .row, .cols{ background:#fff; border-color:#999; }
+    .cols, .row{ grid-template-columns:52px 44px 1fr 1fr 1fr; }
+    .cols > :last-child{ display:none; }
+    .cols input.col-label{ color:#000; border:none; background:none; padding:0; }
     .slate-title{ color:#000; }
     .row{ break-inside:avoid; }
+    .cell-label{ display:none !important; }
     input, textarea, select{ color:#000 !important; }
   }
 </style>
+</head>
+<body>
 
 <div class="wrap">
   <div class="toolbar">
@@ -267,27 +323,38 @@
       <div class="field"><label for="fClient">Client</label><input id="fClient" placeholder="e.g. Heritage Ins."></div>
       <div class="field"><label for="fProduct">Product / campaign</label><input id="fProduct" placeholder="e.g. Spring brand spot"></div>
       <div class="field"><label for="fWriter">Writer</label><input id="fWriter" placeholder="e.g. J. Alvarez"></div>
+      <div class="field"><label for="fDate">Date</label><input id="fDate" type="date"></div>
       <div class="field"><label>Total length</label><div class="readout" id="totalReadout">:00</div></div>
     </div>
   </div>
 
-  <div class="cols"><div>TC In</div><div>Len</div><div>Video</div><div>Audio</div><div></div></div>
+  <div class="cols">
+    <div>TC In</div><div>Len</div><div>Video</div><div>Audio</div>
+    <div><input class="col-label" id="fCol3" aria-label="Third column heading" title="Click to rename this column" placeholder="Script"></div>
+    <div></div>
+  </div>
   <div class="rows" id="rows"></div>
   <button class="add-row" id="addRow">+ Add row</button>
 
   <div class="export-panel" id="exportPanel">
     <h3 id="exportTitle">Export</h3>
-    <p id="exportHint">Downloads aren't available inside this preview, so copy the text below and save it as a file yourself — or use Print for a PDF.</p>
+    <p id="exportHint">Download it as a file, or copy the text below. Use Print for a PDF.</p>
     <textarea id="exportText" readonly></textarea>
     <div class="export-actions">
-      <button class="btn primary" id="copyExport">Copy to clipboard</button>
+      <button class="btn primary" id="downloadExport">Download file</button>
+      <button class="btn" id="copyExport">Copy to clipboard</button>
       <button class="btn" id="closeExport">Close</button>
     </div>
   </div>
 
   <footer class="hint">
-    TC In updates automatically from each row's Length — edit a row's Length and every row after it shifts to match, or edit a row's TC In directly and the row above it stretches or shrinks to meet it. Drafts save to this browser only (via <code>localStorage</code>) — they won't appear on another device or in another browser, and clearing site data will remove them. Use Export → JSON and save the copied text as a file for a portable backup you can re-open with "Open → Browse a file."
+    TC In updates automatically from each row's Length — edit a row's Length and every row after it shifts to match, or edit a row's TC In directly and the row above it stretches or shrinks to meet it. Click the third column's heading to rename it (Script, Supers, SFX, Notes…). Deleted or moved a row by mistake? Hit Undo, or Ctrl/Cmd-Z outside a text box. Drafts save to this browser only (via <code>localStorage</code>) — they won't appear on another device or in another browser, and clearing site data will remove them. Use Export → JSON → Download for a portable backup you can re-open with "Open → Browse a file."
   </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toastMsg"></span>
+  <button id="toastUndo">Undo</button>
 </div>
 
 <script>
@@ -333,13 +400,12 @@
       id: null,
       title: "",
       client: "", product: "", writer: "", date: todayStr(),
-      rows: [
-        {tcIn:0,  len:5, video:"", audio:""},
-        {tcIn:5,  len:5, video:"", audio:""},
-        {tcIn:10, len:5, video:"", audio:""}
-      ]
+      col3Label: "Script",
+      rows: [blankRow(0), blankRow(5), blankRow(10)]
     };
   }
+  function blankRow(tcIn){ return {tcIn:tcIn, len:5, video:"", audio:"", notes:""}; }
+  function col3(){ return (doc.col3Label || "").trim() || "Script"; }
 
   var doc = blankDoc();
   var dirty = false;
@@ -368,12 +434,16 @@
   var fClient = document.getElementById("fClient");
   var fProduct = document.getElementById("fProduct");
   var fWriter = document.getElementById("fWriter");
+  var fDate = document.getElementById("fDate");
+  var fCol3 = document.getElementById("fCol3");
 
   function bindHeader(){
     fTitle.addEventListener("input", function(){ doc.title = fTitle.value; markDirty(true); });
     fClient.addEventListener("input", function(){ doc.client = fClient.value; markDirty(true); });
     fProduct.addEventListener("input", function(){ doc.product = fProduct.value; markDirty(true); });
     fWriter.addEventListener("input", function(){ doc.writer = fWriter.value; markDirty(true); });
+    fDate.addEventListener("input", function(){ doc.date = fDate.value; markDirty(true); });
+    fCol3.addEventListener("input", function(){ doc.col3Label = fCol3.value; refreshCol3Labels(); markDirty(true); });
   }
 
   function renderHeader(){
@@ -381,6 +451,19 @@
     fClient.value = doc.client || "";
     fProduct.value = doc.product || "";
     fWriter.value = doc.writer || "";
+    fDate.value = doc.date || "";
+    fCol3.value = doc.col3Label || "";
+  }
+
+  // Keeps the mobile per-cell labels and placeholders in step with the third column's heading.
+  function refreshCol3Labels(){
+    var label = col3();
+    rowsEl.querySelectorAll(".cell-notes").forEach(function(cell, i){
+      cell.querySelector(".cell-label").textContent = label;
+      var ta = cell.querySelector("textarea");
+      ta.placeholder = label + "...";
+      ta.setAttribute("aria-label", label + ", row " + (i+1));
+    });
   }
 
   function updateTotal(){
@@ -400,18 +483,27 @@
   // ---------- rows ----------
   var rowsEl = document.getElementById("rows");
 
-  function autoGrow(ta){ ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+  // Measures the text's own height and sets it as a minimum; the flex layout then
+  // stretches the box to match the tallest box in its row.
+  function autoGrow(ta){
+    ta.style.flex = "none"; ta.style.minHeight = "0"; ta.style.height = "auto";
+    var h = ta.scrollHeight + (ta.offsetHeight - ta.clientHeight);
+    ta.style.flex = ""; ta.style.height = "";
+    ta.style.minHeight = Math.max(h, 44) + "px";
+  }
 
   function renderRows(){
     rowsEl.innerHTML = "";
+    var label3 = escapeHtml(col3());
     doc.rows.forEach(function(r, i){
       var row = document.createElement("div");
       row.className = "row";
       row.innerHTML =
         '<input class="tcell tc" data-idx="'+i+'" data-field="tc" aria-label="TC in, row '+(i+1)+'" placeholder=":00">' +
         '<input class="tcell len" data-idx="'+i+'" data-field="len" aria-label="Length, row '+(i+1)+'" placeholder="5s">' +
-        '<textarea data-idx="'+i+'" data-field="video" rows="1" aria-label="Video, row '+(i+1)+'" placeholder="Video / action..."></textarea>' +
-        '<textarea data-idx="'+i+'" data-field="audio" rows="1" aria-label="Audio, row '+(i+1)+'" placeholder="VO / dialogue / SFX / music..."></textarea>' +
+        '<div class="cell cell-video"><div class="cell-label">Video</div><textarea data-idx="'+i+'" data-field="video" rows="1" aria-label="Video, row '+(i+1)+'" placeholder="Shots / Actions / Location"></textarea></div>' +
+        '<div class="cell cell-audio"><div class="cell-label">Audio</div><textarea data-idx="'+i+'" data-field="audio" rows="1" aria-label="Audio, row '+(i+1)+'" placeholder="SFX / music / ambience"></textarea></div>' +
+        '<div class="cell cell-notes"><div class="cell-label">'+label3+'</div><textarea data-idx="'+i+'" data-field="notes" rows="1" aria-label="'+label3+', row '+(i+1)+'" placeholder="'+label3+'..."></textarea></div>' +
         '<div class="actions">' +
           '<button class="icon-btn move" data-action="up" data-idx="'+i+'" title="Move up">&#9650;</button>' +
           '<button class="icon-btn move" data-action="down" data-idx="'+i+'" title="Move down">&#9660;</button>' +
@@ -422,7 +514,8 @@
       row.querySelector('[data-field="len"]').value = formatLen(r.len);
       var vt = row.querySelector('[data-field="video"]'); vt.value = r.video || "";
       var at = row.querySelector('[data-field="audio"]'); at.value = r.audio || "";
-      requestAnimationFrame(function(){ autoGrow(vt); autoGrow(at); });
+      var nt = row.querySelector('[data-field="notes"]'); nt.value = r.notes || "";
+      requestAnimationFrame(function(){ autoGrow(vt); autoGrow(at); autoGrow(nt); });
     });
     updateTotal();
   }
@@ -441,11 +534,11 @@
     updateTotal();
   }
 
-  // live typing: video/audio only
+  // live typing: video/audio/notes only
   rowsEl.addEventListener("input", function(e){
     var t = e.target;
     var field = t.getAttribute("data-field");
-    if(field !== "video" && field !== "audio") return;
+    if(field !== "video" && field !== "audio" && field !== "notes") return;
     var idx = +t.getAttribute("data-idx");
     doc.rows[idx][field] = t.value;
     autoGrow(t);
@@ -492,12 +585,17 @@
     var idx = +btn.getAttribute("data-idx");
     var action = btn.getAttribute("data-action");
     if(action === "del"){
+      pushUndo("Row " + (idx+1) + " deleted");
       doc.rows.splice(idx,1);
-      if(doc.rows.length === 0) doc.rows.push({tcIn:0, len:5, video:"", audio:""});
+      if(doc.rows.length === 0) doc.rows.push(blankRow(0));
     } else if(action === "up" && idx > 0){
+      pushUndo("Row " + (idx+1) + " moved up");
       var tmp = doc.rows[idx-1]; doc.rows[idx-1] = doc.rows[idx]; doc.rows[idx] = tmp;
     } else if(action === "down" && idx < doc.rows.length - 1){
+      pushUndo("Row " + (idx+1) + " moved down");
       var tmp2 = doc.rows[idx+1]; doc.rows[idx+1] = doc.rows[idx]; doc.rows[idx] = tmp2;
+    } else {
+      return;
     }
     recalcFrom(0);
     renderRows();
@@ -507,9 +605,50 @@
   document.getElementById("addRow").addEventListener("click", function(){
     var last = doc.rows[doc.rows.length-1];
     var startTc = last ? last.tcIn + last.len : 0;
-    doc.rows.push({tcIn:startTc, len:5, video:"", audio:""});
+    pushUndo("Row added");
+    doc.rows.push(blankRow(startTc));
     renderRows();
     markDirty(true);
+  });
+
+  // ---------- undo (row add / delete / move) ----------
+  var undoStack = [];
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+
+  function pushUndo(label){
+    undoStack.push({ label: label, rows: JSON.stringify(doc.rows) });
+    if(undoStack.length > 30) undoStack.shift();
+    showToast(label);
+  }
+  function undo(){
+    var entry = undoStack.pop();
+    if(!entry) return;
+    doc.rows = JSON.parse(entry.rows);
+    recalcFrom(0);
+    renderRows();
+    markDirty(true);
+    if(undoStack.length) showToast("Undid: " + entry.label.toLowerCase());
+    else hideToast();
+  }
+  function showToast(msg){
+    document.getElementById("toastMsg").textContent = msg;
+    toastEl.classList.add("open");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 6000);
+  }
+  function hideToast(){ toastEl.classList.remove("open"); }
+  function clearUndo(){ undoStack = []; hideToast(); }
+
+  document.getElementById("toastUndo").addEventListener("click", undo);
+  // Ctrl/Cmd-Z undoes row changes only when focus isn't in a text field (those keep their native undo).
+  document.addEventListener("keydown", function(e){
+    if(!(e.ctrlKey || e.metaKey) || e.shiftKey || e.key.toLowerCase() !== "z") return;
+    var tag = document.activeElement && document.activeElement.tagName;
+    if(tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if(!undoStack.length) return;
+    e.preventDefault();
+    undo();
   });
 
   // ---------- new / open / save ----------
@@ -537,10 +676,14 @@
 
   function loadDoc(newDoc){
     doc = newDoc;
+    if(typeof doc.col3Label !== "string") doc.col3Label = "Script";
+    if(typeof doc.date !== "string") doc.date = "";
     doc.rows.forEach(function(r){
       r.tcIn = typeof r.tcIn === "number" ? r.tcIn : parseSeconds(r.tcIn || r.tc);
       r.len = typeof r.len === "number" ? r.len : 5;
+      if(typeof r.notes !== "string") r.notes = "";
     });
+    clearUndo();
     recalcFrom(0);
     renderHeader();
     renderRows();
@@ -624,7 +767,7 @@
           parsed.id = null;
           guard(function(){ loadDoc(parsed); });
         } else {
-          alert("That file doesn't look like a Slate & Script JSON export.");
+          alert("That file doesn't look like an AV Draft JSON export.");
         }
       }catch(err){
         alert("Couldn't read that file as JSON. Use a file exported from Export → JSON.");
@@ -669,12 +812,22 @@
     if(doc.product) meta.push("Product: " + doc.product);
     meta.push("Length: " + formatTC(totalLenSeconds()));
     if(doc.writer) meta.push("Writer: " + doc.writer);
+    if(doc.date) meta.push("Date: " + doc.date);
     lines.push(meta.join("   |   "));
     lines.push("");
-    doc.rows.forEach(function(r){
-      var tcLabel = formatTC(r.tcIn) + " +" + formatLen(r.len);
-      lines.push(tcLabel + "   VIDEO: " + (r.video||""));
-      lines.push(" ".repeat(Math.max(tcLabel.length-6,0)) + "      AUDIO: " + (r.audio||""));
+    var tags = ["VIDEO", "AUDIO", col3().toUpperCase()];
+    var tagW = Math.max.apply(null, tags.map(function(t){ return t.length; })) + 2;
+    var tcs = doc.rows.map(function(r){ return formatTC(r.tcIn) + " +" + formatLen(r.len); });
+    var tcW = Math.max.apply(null, tcs.map(function(t){ return t.length; }).concat([0])) + 3;
+    function pad(s, n){ return s + " ".repeat(Math.max(n - s.length, 0)); }
+    doc.rows.forEach(function(r, i){
+      var parts = [[tags[0], r.video], [tags[1], r.audio]];
+      if((r.notes || "").trim()) parts.push([tags[2], r.notes]);
+      parts.forEach(function(p, j){
+        var body = String(p[1] || "").split("\n");
+        lines.push(pad(j === 0 ? tcs[i] : "", tcW) + pad(p[0] + ":", tagW) + body[0]);
+        for(var k=1; k<body.length; k++) lines.push(" ".repeat(tcW + tagW) + body[k]);
+      });
       lines.push("");
     });
     return lines.join("\n");
@@ -687,13 +840,14 @@
     if(doc.product) meta.push("**Product:** " + doc.product);
     meta.push("**Length:** " + formatTC(totalLenSeconds()));
     if(doc.writer) meta.push("**Writer:** " + doc.writer);
+    if(doc.date) meta.push("**Date:** " + doc.date);
     lines.push(meta.join("  \n"));
     lines.push("");
-    lines.push("| TC In | Len | Video | Audio |");
-    lines.push("|---|---|---|---|");
+    var esc = function(s){ return (s||"").replace(/\|/g,"\\|").replace(/\n/g,"<br>"); };
+    lines.push("| TC In | Len | Video | Audio | " + esc(col3()) + " |");
+    lines.push("|---|---|---|---|---|");
     doc.rows.forEach(function(r){
-      var esc = function(s){ return (s||"").replace(/\|/g,"\\|").replace(/\n/g," "); };
-      lines.push("| " + formatTC(r.tcIn) + " | " + formatLen(r.len) + " | " + esc(r.video) + " | " + esc(r.audio) + " |");
+      lines.push("| " + formatTC(r.tcIn) + " | " + formatLen(r.len) + " | " + esc(r.video) + " | " + esc(r.audio) + " | " + esc(r.notes) + " |");
     });
     return lines.join("\n");
   }
@@ -711,6 +865,7 @@
     if(kind === "print"){ window.print(); return; }
     var text = kind === "text" ? buildText() : kind === "markdown" ? buildMarkdown() : buildJSON();
     exportTitle.textContent = "Export — " + (kind === "text" ? "Plain text" : kind === "markdown" ? "Markdown" : "JSON");
+    exportKind = kind;
     exportText.value = text;
     exportPanel.classList.add("open");
     exportText.focus();
@@ -718,6 +873,33 @@
   });
   document.getElementById("closeExport").addEventListener("click", function(){
     exportPanel.classList.remove("open");
+  });
+
+  var exportKind = "text";
+  var EXPORT_TYPES = {
+    text:     { ext: ".txt",  mime: "text/plain" },
+    markdown: { ext: ".md",   mime: "text/markdown" },
+    json:     { ext: ".json", mime: "application/json" }
+  };
+  function fileBaseName(){
+    var base = (doc.title || "untitled-script").toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "untitled-script";
+    return doc.date ? base + "-" + doc.date : base;
+  }
+  document.getElementById("downloadExport").addEventListener("click", function(){
+    var btn = document.getElementById("downloadExport");
+    var t = EXPORT_TYPES[exportKind];
+    try{
+      var blob = new Blob([exportText.value], { type: t.mime + ";charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = fileBaseName() + t.ext;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }catch(e){
+      btn.textContent = "Download blocked — copy instead";
+      setTimeout(function(){ btn.textContent = "Download file"; }, 2200);
+    }
   });
   document.getElementById("copyExport").addEventListener("click", function(){
     var btn = document.getElementById("copyExport");
@@ -739,3 +921,5 @@
   markDirty(false);
 })();
 </script>
+</body>
+</html>
