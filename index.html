@@ -334,7 +334,7 @@
     <div></div>
   </div>
   <div class="rows" id="rows"></div>
-  <button class="add-row" id="addRow">+ Add row</button>
+  <button class="add-row" id="addRow" title="Or press Shift+Enter in any row">+ Add row <span style="opacity:.7">(Shift+Enter)</span></button>
 
   <div class="export-panel" id="exportPanel">
     <h3 id="exportTitle">Export</h3>
@@ -348,7 +348,7 @@
   </div>
 
   <footer class="hint">
-    TC In updates automatically from each row's Length — edit a row's Length and every row after it shifts to match, or edit a row's TC In directly and the row above it stretches or shrinks to meet it. Click the third column's heading to rename it (Script, Supers, SFX, Notes…). Deleted or moved a row by mistake? Hit Undo, or Ctrl/Cmd-Z outside a text box. Drafts save to this browser only (via <code>localStorage</code>) — they won't appear on another device or in another browser, and clearing site data will remove them. Use Export → JSON → Download for a portable backup you can re-open with "Open → Browse a file."
+    TC In updates automatically from each row's Length — edit a row's Length and every row after it shifts to match, or edit a row's TC In directly and the row above it stretches or shrinks to meet it. Click the third column's heading to rename it (Script, Supers, SFX, Notes…). Press Shift+Enter in any row to add a new row below it. Deleted or moved a row by mistake? Hit Undo, or Ctrl/Cmd-Z outside a text box. Drafts save to this browser only (via <code>localStorage</code>) — they won't appear on another device or in another browser, and clearing site data will remove them. Use Export → JSON → Download for a portable backup you can re-open with "Open → Browse a file."
   </footer>
 </div>
 
@@ -573,6 +573,14 @@
   });
 
   rowsEl.addEventListener("keydown", function(e){
+    // Shift+Enter anywhere in a row inserts a new row right below it.
+    if(e.key === "Enter" && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.target.hasAttribute("data-idx")){
+      e.preventDefault();
+      var idx = +e.target.getAttribute("data-idx");
+      e.target.blur(); // commits a pending TC In / Length edit first
+      insertRowAfter(idx);
+      return;
+    }
     if(e.key === "Enter" && (e.target.getAttribute("data-field") === "tc" || e.target.getAttribute("data-field") === "len")){
       e.preventDefault();
       e.target.blur();
@@ -602,13 +610,20 @@
     markDirty(true);
   });
 
-  document.getElementById("addRow").addEventListener("click", function(){
-    var last = doc.rows[doc.rows.length-1];
-    var startTc = last ? last.tcIn + last.len : 0;
+  // Inserts a blank row after index `idx` (at the end when idx is the last row),
+  // re-chains the timecodes, and puts the cursor in the new row's Video box.
+  function insertRowAfter(idx){
     pushUndo("Row added");
-    doc.rows.push(blankRow(startTc));
+    doc.rows.splice(idx + 1, 0, blankRow(0));
+    recalcFrom(idx);
     renderRows();
     markDirty(true);
+    var ta = rowsEl.querySelector('[data-idx="'+(idx+1)+'"][data-field="video"]');
+    if(ta){ ta.focus(); ta.scrollIntoView({ block: "nearest" }); }
+  }
+
+  document.getElementById("addRow").addEventListener("click", function(){
+    insertRowAfter(doc.rows.length - 1);
   });
 
   // ---------- undo (row add / delete / move) ----------
