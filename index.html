@@ -135,9 +135,9 @@
     padding:18px 18px 14px; margin-bottom:18px;
   }
   .slate-title{
-    width:100%; border:none; background:none; color:var(--ink);
+    width:100%; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink);
     font-family:"Fraunces", serif; font-weight:700; font-size:1.6rem;
-    padding:2px 0; margin-bottom:12px;
+    padding:6px 12px; margin-bottom:12px;
   }
   .slate-title::placeholder{ color:var(--ink-soft); opacity:.6; }
   .slate-grid{
@@ -259,7 +259,7 @@
     .slate, .row, .cols{ background:#fff; border-color:#999; }
     .cols, .row{ grid-template-columns:52px 44px 1fr 1fr 1fr; }
     .cols > :last-child{ display:none; }
-    .slate-title{ color:#000; }
+    .slate-title{ color:#000; border:none; background:none; padding:2px 0; }
     .row{ break-inside:avoid; }
     .cell-label{ display:none !important; }
     input, textarea, select{ color:#000 !important; }
