@@ -118,6 +118,7 @@
   .menu-item:hover{ background:var(--panel-2); }
   .menu-item .sub{ display:block; font-size:.72rem; color:var(--ink-soft); }
   .menu-empty{ padding:8px; font-size:.8rem; color:var(--ink-soft); }
+  .menu-note{ padding:2px 8px 6px; font-size:.72rem; color:var(--ink-soft); }
   .menu-divider{ height:1px; background:var(--line); margin:6px 2px; }
 
   /* ---- confirm banner ---- */
@@ -277,7 +278,7 @@
       <div class="menu" id="menuOpen"></div>
     </div>
 
-    <button class="btn primary" id="btnSave">Save</button>
+    <button class="btn primary" id="btnSave" title="Saved in this browser only. Use Export → JSON to back up or move to another device.">Save</button>
 
     <div class="dropdown">
       <button class="btn" id="btnExport">Export ▾</button>
@@ -714,7 +715,7 @@
                 '<span class="sub">'+ fmtTime(e.updatedAt) +'</span></button>';
       });
     }
-    html += '<div class="menu-divider"></div><button class="menu-item" id="browseFile">Browse a file&hellip;<span class="sub">open a previously exported .json</span></button>';
+    html += '<div class="menu-note">Saved in this browser only</div><div class="menu-divider"></div><button class="menu-item" id="browseFile">Browse a file&hellip;<span class="sub">open a previously exported .json</span></button>';
     menuOpen.innerHTML = html;
   }
   function escapeHtml(s){ return s.replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
