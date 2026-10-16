@@ -164,12 +164,6 @@
     padding:0 4px 6px; font-size:.7rem; text-transform:uppercase;
     letter-spacing:.08em; color:var(--ink-soft);
   }
-  .cols input.col-label{
-    width:100%; font:inherit; letter-spacing:inherit; text-transform:uppercase;
-    color:var(--ink); background:var(--paper); border:1px solid var(--line);
-    padding:4px 7px; border-radius:6px; cursor:text;
-  }
-  .cols input.col-label:hover{ border-color:var(--accent); }
   /* Each cell stretches to the row's height, and its textarea fills the cell, so the
      boxes in a row always line up with the tallest one. */
   .cell{ min-width:0; display:flex; flex-direction:column; }
@@ -244,10 +238,7 @@
   }
   @media (max-width:640px){
     .slate-grid{ grid-template-columns:repeat(2,1fr); }
-    .cols{ display:flex; align-items:baseline; gap:8px; padding:0 2px 8px; }
-    .cols > div{ display:none; }
-    .cols > div:nth-child(5){ display:block; flex:1; }
-    .cols::before{ content:"Third column:"; white-space:nowrap; }
+    .cols{ display:none; }
     .row{
       grid-template-columns:72px 72px 1fr;
       grid-template-areas:"tc len actions" "video video video" "audio audio audio" "notes notes notes";
@@ -268,7 +259,6 @@
     .slate, .row, .cols{ background:#fff; border-color:#999; }
     .cols, .row{ grid-template-columns:52px 44px 1fr 1fr 1fr; }
     .cols > :last-child{ display:none; }
-    .cols input.col-label{ color:#000; border:none; background:none; padding:0; }
     .slate-title{ color:#000; }
     .row{ break-inside:avoid; }
     .cell-label{ display:none !important; }
@@ -329,9 +319,7 @@
   </div>
 
   <div class="cols">
-    <div>TC In</div><div>Len</div><div>Video</div><div>Audio</div>
-    <div><input class="col-label" id="fCol3" aria-label="Third column heading" title="Click to rename this column" placeholder="Script"></div>
-    <div></div>
+    <div>TC In</div><div>Len</div><div>Video</div><div>Audio</div><div>Script</div><div></div>
   </div>
   <div class="rows" id="rows"></div>
   <button class="add-row" id="addRow" title="Or press Shift+Enter in any row">+ Add row <span style="opacity:.7">(Shift+Enter)</span></button>
@@ -348,7 +336,7 @@
   </div>
 
   <footer class="hint">
-    TC In updates automatically from each row's Length — edit a row's Length and every row after it shifts to match, or edit a row's TC In directly and the row above it stretches or shrinks to meet it. Click the third column's heading to rename it (Script, Supers, SFX, Notes…). Press Shift+Enter in any row to add a new row below it. Deleted or moved a row by mistake? Hit Undo, or Ctrl/Cmd-Z outside a text box. Drafts save to this browser only (via <code>localStorage</code>) — they won't appear on another device or in another browser, and clearing site data will remove them. Use Export → JSON → Download for a portable backup you can re-open with "Open → Browse a file."
+    TC In updates automatically from each row's Length — edit a row's Length and every row after it shifts to match, or edit a row's TC In directly and the row above it stretches or shrinks to meet it. Press Shift+Enter in any row to add a new row below it. Deleted or moved a row by mistake? Hit Undo, or Ctrl/Cmd-Z outside a text box. Drafts save to this browser only (via <code>localStorage</code>) — they won't appear on another device or in another browser, and clearing site data will remove them. Use Export → JSON → Download for a portable backup you can re-open with "Open → Browse a file."
   </footer>
 </div>
 
@@ -400,12 +388,11 @@
       id: null,
       title: "",
       client: "", product: "", writer: "", date: todayStr(),
-      col3Label: "Script",
       rows: [blankRow(0), blankRow(5), blankRow(10)]
     };
   }
+  // The Script column is stored as `notes` so drafts saved before it was renamed still open.
   function blankRow(tcIn){ return {tcIn:tcIn, len:5, video:"", audio:"", notes:""}; }
-  function col3(){ return (doc.col3Label || "").trim() || "Script"; }
 
   var doc = blankDoc();
   var dirty = false;
@@ -435,7 +422,6 @@
   var fProduct = document.getElementById("fProduct");
   var fWriter = document.getElementById("fWriter");
   var fDate = document.getElementById("fDate");
-  var fCol3 = document.getElementById("fCol3");
 
   function bindHeader(){
     fTitle.addEventListener("input", function(){ doc.title = fTitle.value; markDirty(true); });
@@ -443,7 +429,6 @@
     fProduct.addEventListener("input", function(){ doc.product = fProduct.value; markDirty(true); });
     fWriter.addEventListener("input", function(){ doc.writer = fWriter.value; markDirty(true); });
     fDate.addEventListener("input", function(){ doc.date = fDate.value; markDirty(true); });
-    fCol3.addEventListener("input", function(){ doc.col3Label = fCol3.value; refreshCol3Labels(); markDirty(true); });
   }
 
   function renderHeader(){
@@ -452,18 +437,6 @@
     fProduct.value = doc.product || "";
     fWriter.value = doc.writer || "";
     fDate.value = doc.date || "";
-    fCol3.value = doc.col3Label || "";
-  }
-
-  // Keeps the mobile per-cell labels and placeholders in step with the third column's heading.
-  function refreshCol3Labels(){
-    var label = col3();
-    rowsEl.querySelectorAll(".cell-notes").forEach(function(cell, i){
-      cell.querySelector(".cell-label").textContent = label;
-      var ta = cell.querySelector("textarea");
-      ta.placeholder = label + "...";
-      ta.setAttribute("aria-label", label + ", row " + (i+1));
-    });
   }
 
   function updateTotal(){
@@ -494,7 +467,6 @@
 
   function renderRows(){
     rowsEl.innerHTML = "";
-    var label3 = escapeHtml(col3());
     doc.rows.forEach(function(r, i){
       var row = document.createElement("div");
       row.className = "row";
@@ -503,7 +475,7 @@
         '<input class="tcell len" data-idx="'+i+'" data-field="len" aria-label="Length, row '+(i+1)+'" placeholder="5s">' +
         '<div class="cell cell-video"><div class="cell-label">Video</div><textarea data-idx="'+i+'" data-field="video" rows="1" aria-label="Video, row '+(i+1)+'" placeholder="Shots / Actions / Location"></textarea></div>' +
         '<div class="cell cell-audio"><div class="cell-label">Audio</div><textarea data-idx="'+i+'" data-field="audio" rows="1" aria-label="Audio, row '+(i+1)+'" placeholder="SFX / music / ambience"></textarea></div>' +
-        '<div class="cell cell-notes"><div class="cell-label">'+label3+'</div><textarea data-idx="'+i+'" data-field="notes" rows="1" aria-label="'+label3+', row '+(i+1)+'" placeholder="'+label3+'..."></textarea></div>' +
+        '<div class="cell cell-notes"><div class="cell-label">Script</div><textarea data-idx="'+i+'" data-field="notes" rows="1" aria-label="Script, row '+(i+1)+'" placeholder="Script..."></textarea></div>' +
         '<div class="actions">' +
           '<button class="icon-btn move" data-action="up" data-idx="'+i+'" title="Move up">&#9650;</button>' +
           '<button class="icon-btn move" data-action="down" data-idx="'+i+'" title="Move down">&#9660;</button>' +
@@ -691,7 +663,6 @@
 
   function loadDoc(newDoc){
     doc = newDoc;
-    if(typeof doc.col3Label !== "string") doc.col3Label = "Script";
     if(typeof doc.date !== "string") doc.date = "";
     doc.rows.forEach(function(r){
       r.tcIn = typeof r.tcIn === "number" ? r.tcIn : parseSeconds(r.tcIn || r.tc);
@@ -830,7 +801,7 @@
     if(doc.date) meta.push("Date: " + doc.date);
     lines.push(meta.join("   |   "));
     lines.push("");
-    var tags = ["VIDEO", "AUDIO", col3().toUpperCase()];
+    var tags = ["VIDEO", "AUDIO", "SCRIPT"];
     var tagW = Math.max.apply(null, tags.map(function(t){ return t.length; })) + 2;
     var tcs = doc.rows.map(function(r){ return formatTC(r.tcIn) + " +" + formatLen(r.len); });
     var tcW = Math.max.apply(null, tcs.map(function(t){ return t.length; }).concat([0])) + 3;
@@ -859,7 +830,7 @@
     lines.push(meta.join("  \n"));
     lines.push("");
     var esc = function(s){ return (s||"").replace(/\|/g,"\\|").replace(/\n/g,"<br>"); };
-    lines.push("| TC In | Len | Video | Audio | " + esc(col3()) + " |");
+    lines.push("| TC In | Len | Video | Audio | Script |");
     lines.push("|---|---|---|---|---|");
     doc.rows.forEach(function(r){
       lines.push("| " + formatTC(r.tcIn) + " | " + formatLen(r.len) + " | " + esc(r.video) + " | " + esc(r.audio) + " | " + esc(r.notes) + " |");
